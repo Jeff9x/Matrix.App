@@ -42,8 +42,8 @@ jobs:
           sed -i 's|image:.*|image: ${{ secrets.DOCKERHUB_USERNAME }}/my-app:${{ github.sha }}|g' deployment.yaml
 
           echo "Applying configuration to Kubernetes..."
-          # Apply the modified deployment file
+          # Apply the modified deployment file and the service
           kubectl apply -f deployment.yaml
-          kubectl apply -f service.yaml # Also apply the service
+          kubectl apply -f service.yaml
 
           echo "Deployment complete!"
