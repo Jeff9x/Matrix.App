@@ -1,0 +1,38 @@
+name: Deploying Matrix.app
+
+# Trigger this pipeline on every push to the main branch
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    name: Deploy ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        app: [app-one, app-two, app-three]
+
+    steps:
+      # STEP 1: Checks out your repository to access the YAML files
+      - name: 1. Checkout Code
+        uses: actions/checkout@v4
+
+      # STEP 2: Logs into your Kubernetes cluster
+      - name: 2. Log into Kubernetes
+        uses: azure/k8s-set-context@v4
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }}
+
+      # STEP 3: Deploys the specified image to Kubernetes
+      - name: 3. Deploy Static Image
+        run: |
+          echo "Updating deployment to use image: nginxdemos/hello:plain-text"
+          
+          # This command updates the live deployment to use the specified static image
+          kubectl set image deployment/${{ matrix.app }}-deployment ${{ matrix.app }}=nginxdemos/hello:plain-text
+          
+          echo "Rollout complete! ✅"
+ 
