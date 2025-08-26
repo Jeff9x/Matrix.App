@@ -1,38 +1,31 @@
-name: Deploying Matrix.app
+# This is a complete GitHub Actions workflow file.
 
-# Trigger this pipeline on every push to the main branch
+name: Deploy to Kubernetes
+
+# 1. TRIGGER: This workflow runs on any push to the 'main' branch.
 on:
   push:
     branches: [ "main" ]
 
 jobs:
-  deploy:
-    name: Deploy ${{ matrix.app }}
+  build-and-deploy:
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        app: [app-one, app-two, app-three]
-
     steps:
-      # STEP 1: Checks out your repository to access the YAML files
-      - name: 1. Checkout Code
+      # 2. CHECKOUT: Checks out your repository's code so the workflow can access it.
+      - name: 1. Checkout repository
         uses: actions/checkout@v4
 
-      # STEP 2: Logs into your Kubernetes cluster
+      # 3. LOGIN (Your integrated step): Creates the kubeconfig file from a secret.
       - name: 2. Log into Kubernetes
-        uses: azure/k8s-set-context@v4
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBE_CONFIG_DATA }}
-
-      # STEP 3: Deploys the specified image to Kubernetes
-      - name: 3. Deploy Static Image
         run: |
-          echo "Updating deployment to use image: nginxdemos/hello:plain-text"
-          
-          # This command updates the live deployment to use the specified static image
-          kubectl set image deployment/${{ matrix.app }}-deployment ${{ matrix.app }}=nginxdemos/hello:plain-text
-          
-          echo "Rollout complete! ✅"
- 
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+          echo "✅ Kubeconfig file created. Verifying connection..."
+          kubectl cluster-info
+
+      # 4. DEPLOY: Uses the connection to apply Kubernetes manifests from your repository.
+      - name: 3. Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/
+          echo "🚀 Deployment successful!"
